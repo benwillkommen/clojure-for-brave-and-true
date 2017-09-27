@@ -5,7 +5,8 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [
   	[org.clojure/clojure "1.8.0"]
-  	[clj-http "3.7.0"]
+    [clj-http "3.7.0"]
+  	[enlive "1.1.6"]
   ]
   :main ^:skip-aot chapter9.core
   :target-path "target/%s"
