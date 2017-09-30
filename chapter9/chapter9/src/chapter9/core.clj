@@ -43,7 +43,7 @@
         (deliver search-promise (:body (http/get (format url-format q))))))
     @search-promise))
 
-(defn search-all
+(defn search-all-1
   [q search-engines]
   (let [results 
         (map #(future (http/get (format (:url-format (second %)) q)))
@@ -54,6 +54,7 @@
           (into urls (map  #(:href (:attrs %)) a-tags))))
       []
       results)))
+
 
 ; (defn search-all
 ;   [q search-engines]
