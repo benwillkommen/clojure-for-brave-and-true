@@ -138,3 +138,12 @@
     (last (map deref quote-futures))))
 
 
+(def warrior (ref { :hp 15 :max-hp 40 :inventory #{}}))
+(def cleric (ref { :hp 22 :max-hp 22 :inventory #{ :potion }}))
+
+(defn heal
+  [healer target]
+  (dosync (when-let [potion (get-in @healer [:inventory :potion])]
+    (let [target-max-hp (get @target :max-hp)]
+      ((alter target assoc-in [:hp] target-max-hp)
+      (alter healer update-in [:inventory] disj potion))))))
