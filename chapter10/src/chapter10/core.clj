@@ -63,3 +63,78 @@
         (alter gnome update-in [:socks] conj updated-count)
         (alter dryer update-in [:socks] disj pair)
         (alter dryer update-in [:socks] conj updated-count)))))
+
+(defn similar-socks
+  [target-sock sock-set]
+  (filter #(= (:variety %) (:variety target-sock)) sock-set))
+
+;((def receiver-a (ref #{})) (def receiver-b (ref #{})) (def giver (ref #{1}))
+
+(defn unsafe-giver
+  [giver receiver-a receiver-b]  
+  (do (future (dosync (let [gift (first @giver)]
+                    (Thread/sleep 10)
+                    (commute receiver-a conj gift)
+                    (commute giver disj gift))))
+      (future (dosync (let [gift (first @giver)]
+                    (Thread/sleep 50)
+                    (commute receiver-b conj gift)
+                    (commute giver disj gift))))))
+
+(defn safe-giver
+  [giver receiver-a receiver-b]  
+  (do (future (dosync (when-let [gift (first (ensure giver))]
+                    (Thread/sleep 10)
+                    (commute receiver-a conj gift)
+                    (commute giver disj gift))))
+      (future (dosync (when-let [gift (first (ensure giver))]
+                    (Thread/sleep 50)
+                    (commute receiver-b conj gift)
+                    (commute giver disj gift))))))
+
+(def alphabet-length 26)
+
+(def letters (mapv (comp str char (partial + 65)) (range alphabet-length)))
+
+(defn random-string
+  "Returns a random string of specified length"
+  [length]
+  (apply str (take length (repeatedly #(rand-nth letters)))))
+
+(defn random-string-list
+  [list-length string-length]
+  (doall (take list-length (repeatedly (partial random-string string-length)))))
+
+(def orc-names (random-string-list 300 700))
+
+(def my-atom (atom 0))
+
+(swap! my-atom inc)
+
+(defn count-words-in-string
+  [some-string]
+  (println some-string)
+  (reduce 
+    (fn [word-map word]
+      (assoc word-map word (inc (get word-map word 0))))
+  {}
+  (filter #(not= % "") (clojure.string/split some-string #"[ \n\.-]"))))
+
+(defn quote-word-count
+  "I would not have designed this function in this way, but that the excercise explicitly said to make the http request and swap the atom in the same future."
+  [quote-count]
+  (let [word-map (atom {})
+        ; watcher (add-watch word-map :word-count-monitor (fn [key watched old-state new-state]
+        ;   (do (println key)
+        ;     (println old-state)
+        ;     (println new-state))))
+        quote-futures (repeatedly quote-count          
+            (fn [] (future (let [next-word-map (count-words-in-string (slurp "https://www.braveclojure.com/random-quote"))]
+              (swap! 
+                word-map 
+                (fn [current-word-map] 
+                  (merge-with + current-word-map next-word-map)))))))
+        ]
+    (last (map deref quote-futures))))
+
+
